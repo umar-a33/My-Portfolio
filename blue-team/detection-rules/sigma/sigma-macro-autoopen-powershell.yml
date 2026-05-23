@@ -1,0 +1,56 @@
+title: Office Macro AutoOpen Spawning PowerShell
+id: 5d4e3f2a-1b0c-4d9e-8f7a-6b5c4d3e2f1a
+status: stable
+description: Detects macro-enabled Office documents (.docm, .xlsm) executing AutoOpen macros that spawn PowerShell, cmd, or wscript processes — a common malware delivery chain.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1204/002/
+  - https://attack.mitre.org/techniques/T1059/001/
+tags:
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.execution
+  - attack.user_execution
+logsource:
+  product: edr
+  category: process_creation
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\WINWORD.EXE'
+      - '\EXCEL.EXE'
+      - '\POWERPNT.EXE'
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+  selection_commandline:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Net.WebClient'
+      - 'bitsadmin'
+      - 'certutil'
+  condition: selection_parent and selection_child and selection_commandline
+falsepositives:
+  - Legitimate administrative scripts using Office macros
+  - Internal automation tools
+  - Developer testing environments
+level: high
+response:
+  - Immediately isolate the endpoint
+  - Capture the full process tree for forensic analysis
+  - Extract and analyze the macro document
+  - Check for secondary payload downloads
+  - Block file hash across email gateway and EDR
+  - Hunt for the same file hash across all endpoints

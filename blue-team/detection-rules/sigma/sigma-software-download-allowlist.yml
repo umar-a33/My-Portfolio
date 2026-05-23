@@ -1,0 +1,61 @@
+title: Suspicious File Download with Allowlist Filtering
+id: 3a7b2c9d-1e4f-4a8b-9c3d-5f6a0b8e2d1c
+status: stable
+description: Detects suspicious file downloads from the internet while applying allowlist logic for known legitimate software update URLs to reduce false positives.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1189/
+tags:
+  - attack.t1189
+  - attack.initial_access
+logsource:
+  product: proxy
+  category: proxy
+detection:
+  selection_download:
+    c-uri|endswith:
+      - '.exe'
+      - '.msi'
+      - '.zip'
+      - '.rar'
+      - '.7z'
+      - '.iso'
+      - '.img'
+      - '.ps1'
+      - '.bat'
+      - '.cmd'
+      - '.vbs'
+      - '.js'
+  selection_external:
+    cs-host|contains:
+      - 'download'
+      - 'update'
+      - 'software'
+  filter_allowlist:
+    cs-host|contains:
+      - 'win-rar.com'
+      - 'adobe.com'
+      - 'microsoft.com'
+      - 'google.com'
+      - 'mozilla.org'
+      - 'apple.com'
+      - 'github.com'
+      - 'python.org'
+      - 'nodejs.org'
+      - 'oracle.com'
+  filter_signed:
+    file_signed: 'true'
+  condition: selection_download and selection_external and not filter_allowlist and not filter_signed
+falsepositives:
+  - Legitimate software updates from known vendors
+  - Internal software distribution servers
+  - Developer tools and utilities
+level: low
+response:
+  - Verify file hash against VirusTotal
+  - Check code signing certificate validity
+  - Review ANY.RUN or Hybrid Analysis sandbox results
+  - If confirmed legitimate, add domain to allowlist filter
+  - If confirmed malicious, block domain and hunt for additional downloads

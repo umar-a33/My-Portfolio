@@ -1,0 +1,64 @@
+title: Outbound C2 Beaconing Detection
+id: 7f6e5d4c-3b2a-1c0d-9e8f-7a6b5c4d3e2f
+status: stable
+description: Detects periodic outbound HTTP/HTTPS connections to suspicious domains indicative of command-and-control (C2) beaconing behavior from endpoints.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1071/001/
+  - https://attack.mitre.org/techniques/T1573/
+tags:
+  - attack.t1071.001
+  - attack.t1573
+  - attack.command_and_control
+logsource:
+  product: edr
+  category: network_connection
+detection:
+  selection_outbound:
+    Initiated: 'true'
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+      - 8443
+  selection_suspicious_dest:
+    DestinationHostname|contains:
+      - '.ru'
+      - '.br'
+      - '.cn'
+      - '.top'
+      - '.xyz'
+      - '.buzz'
+      - '.club'
+      - '.work'
+  selection_process:
+    Image|endswith:
+      - '\excel.exe'
+      - '\winword.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+  filter_known_good:
+    DestinationHostname|contains:
+      - 'microsoft.com'
+      - 'office.com'
+      - 'windows.com'
+      - 'live.com'
+      - 'outlook.com'
+  condition: selection_outbound and selection_suspicious_dest and selection_process and not filter_known_good
+falsepositives:
+  - Legitimate applications communicating with international CDNs
+  - SaaS platforms hosted on international infrastructure
+  - VPN/proxy traffic
+level: high
+response:
+  - Immediately isolate the endpoint
+  - Capture full network traffic for forensic analysis
+  - Block C2 IP/domain across firewall, DNS, proxy, and EDR
+  - Extract and analyze the initiating file
+  - Hunt for the same C2 IOCs across all endpoints
+  - Mandate password resets for all accounts active on the host
+  - Escalate for forensic imaging

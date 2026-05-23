@@ -1,0 +1,100 @@
+title: Macro-Enabled Office Attachment from External Email Sender
+id: 8c91f2a3-4b7d-4e1a-9f6c-3d8a0e2b5c1f
+status: stable
+description: >
+  Detects the delivery of macro-enabled Microsoft Office attachments (.docm, .xlsm)
+  and legacy Office documents with macro capability (.xls, .doc) originating from
+  external email senders. Such attachments are commonly used in phishing campaigns
+  to deliver malicious payloads that execute via VBA macros. This rule supports
+  email proxy, email gateway, and mail transfer agent (MTA) log sources.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1566/001/
+  - https://attack.mitre.org/techniques/T1204/002/
+  - https://learn.microsoft.com/en-us/deployoffice/security/internet-macros
+  - https://www.mandiant.com/resources/blog/email-delivered-malicious-macros
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1566.001
+  - attack.t1204.002
+  - attack.phishing
+  - attack.macro
+logsource:
+  category: proxy
+  product: email
+detection:
+  selection_attachments:
+    attachment_extension:
+      - '.docm'
+      - '.xlsm'
+      - '.xls'
+      - '.doc'
+  selection_attachments_name:
+    attachment_name|endswith:
+      - '.docm'
+      - '.xlsm'
+      - '.xls'
+      - '.doc'
+  selection_attachments_file:
+    file_name|endswith:
+      - '.docm'
+      - '.xlsm'
+      - '.xls'
+      - '.doc'
+  selection_external:
+    direction:
+      - 'inbound'
+    sender_is_external:
+      - true
+  selection_inbound:
+    message_direction:
+      - 'inbound'
+    mail_flow_direction:
+      - 'inbound'
+  filter_internal:
+    sender_domain:
+      - 'yourdomain.com'
+      - 'company.internal'
+  filter_whitelist:
+    sender_domain:
+      - 'trusted-partner.com'
+      - 'approved-vendor.org'
+  condition: >
+    (selection_attachments or selection_attachments_name or selection_attachments_file)
+    and (selection_external or selection_inbound)
+    and not (filter_internal)
+    and not (filter_whitelist)
+falsepositives:
+  - Legitimate business partners sending macro-enabled documents for approved workflows
+  - Internal users forwarding macro-enabled documents from personal email accounts
+  - Automated reporting systems that generate and email .xlsm or .docm files
+  - Vendors or contractors who regularly exchange macro-enabled templates
+level: high
+fields:
+  - sender
+  - sender_domain
+  - recipient
+  - subject
+  - attachment_name
+  - attachment_extension
+  - attachment_hash
+  - file_hash
+  - timestamp
+  - direction
+  - src_ip
+  - message_id
+message: >
+  Macro-enabled Office attachment received from external sender. Sender: '$sender',
+  Recipient: '$recipient', Subject: '$subject', Attachment: '$attachment_name'.
+  This may indicate a phishing attempt delivering a malicious macro payload.
+action: alert
+response:
+  - Quarantine the email and attachment for analysis
+  - Inspect the attachment in a sandboxed environment for malicious VBA macros
+  - Check the sender domain against threat intelligence feeds
+  - Notify the recipient and confirm legitimacy via out-of-band communication
+  - If confirmed malicious, block the sender domain and attachment hash across security controls
+  - Hunt for other emails from the same sender or containing the same attachment hash

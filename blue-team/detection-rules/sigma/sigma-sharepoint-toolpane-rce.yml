@@ -1,0 +1,42 @@
+title: SharePoint ToolPane.aspx RCE Exploitation (CVE-2025-53770)
+id: 9a8b7c6d-5e4f-3a2b-1c0d-9e8f-7a6b5c4d3e2f
+status: stable
+description: Detects exploitation attempts against CVE-2025-53770 (SharePoint RCE) via ToolPane.aspx from external IPs.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1190/
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-53770
+tags:
+  - attack.t1190
+  - attack.t1059.001
+  - attack.initial_access
+  - attack.execution
+logsource:
+  product: iis
+  category: webserver
+detection:
+  selection_toolpane:
+    cs-uri-stem|contains:
+      - '/_layouts/15/ToolPane.aspx'
+    cs-method: 'POST'
+  selection_external:
+    c-ip|cidr:
+      - '!10.0.0.0/8'
+      - '!172.16.0.0/12'
+      - '!192.168.0.0/16'
+  condition: selection_toolpane and selection_external
+falsepositives:
+  - Legitimate SharePoint administration (should not come from external IPs)
+  - Internal SharePoint development/testing
+level: critical
+response:
+  - Immediately isolate the SharePoint server
+  - Block source IP across all perimeter defenses
+  - Check for csc.exe or PowerShell spawned by w3wp.exe
+  - Rotate all SharePoint machine keys
+  - Apply CVE-2025-53770 patch immediately
+  - Escalate to Tier 2 for deep forensics
+  - Hunt for lateral movement from the compromised server

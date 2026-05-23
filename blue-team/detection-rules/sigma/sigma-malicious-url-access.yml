@@ -1,0 +1,63 @@
+title: Endpoint Access to Known Malicious URLs or Domains via Proxy
+id: 8a3c7f2b-9e1d-4b6a-8c3f-1a2d4e6f8b0c
+status: stable
+description: >
+  Detects endpoints that have attempted to reach known malicious URLs or domains
+  as observed through proxy or secure web gateway logs. Matches against threat
+  intelligence indicators of compromise (IOCs) associated with malware delivery,
+  phishing kits, command-and-control (C2) infrastructure, and exploit frameworks.
+references:
+  - https://attack.mitre.org/techniques/T1189/
+  - https://attack.mitre.org/techniques/T1204/001/
+  - https://attack.mitre.org/tactics/TA0001/
+  - https://attack.mitre.org/tactics/TA0002/
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1189
+  - attack.t1204.001
+  - network.malicious_url
+  - network.phishing
+logsource:
+  category: proxy
+  definition: >
+    Web proxy log sources that record HTTP/HTTPS requests including destination
+    URL, domain, source IP, user-agent, and HTTP method. Compatible with Squid,
+    Blue Coat ProxySG, Zscaler, Palo Alto URL Filtering, Fortinet web filter,
+    Cisco WSA, Netskope, and similar proxy or secure web gateway solutions.
+detection:
+  selection_proxy_malicious_url:
+    c-uri|contains:
+      - 'malware-c2.example'
+      - 'phish-kit.example'
+      - 'exploit-host.example'
+      # Replace above with your threat intel feed IOCs
+  selection_proxy_malicious_domain:
+    cs-host|contains:
+      - 'malware-c2.example'
+      - 'phish-kit.example'
+      - 'exploit-host.example'
+  filter_proxy_known_good:
+    cs-host|endswith:
+      - '.google.com'
+      - '.microsoft.com'
+      - '.amazonaws.com'
+      - '.cloudflare.com'
+      - '.akamaiedge.net'
+  condition: (1 of selection_*) and not 1 of filter_*
+falsepositives:
+  - Threat-hunting and security research activities accessing known malicious infrastructure.
+  - Sandbox or dynamic-analysis environments detonating malware samples.
+  - Users redirected to malicious sites through malvertising with no click-through.
+  - Expired or sinkholed domains still listed in loosely curated threat feeds.
+  - Internal penetration testing or red-team engagements using known IOCs.
+level: high
+actionable:
+  - Investigate the source endpoint (src_ip) for signs of compromise or lateral movement.
+  - Correlate DNS logs to identify associated queries and downstream connections.
+  - Block the malicious URL/domain at the proxy or firewall level.
+  - Enrich the alert with threat intelligence for additional context.
+  - Review user activity on the source endpoint for IOCs.

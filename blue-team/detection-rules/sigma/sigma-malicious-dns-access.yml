@@ -1,0 +1,77 @@
+title: DNS Resolution of Known Malicious Domains
+id: 3b7e1a9f-4c2d-48b5-9f6e-2a1c3d5e7f9b
+status: stable
+description: >
+  Detects internal endpoints that have issued DNS queries for known malicious
+  domains via DNS server or resolver logs. Domains may be associated with malware
+  C2, phishing, cryptojacking, exploit kits, or ransomware distribution
+  infrastructure. Also detects high-entropy domains indicative of DGA activity.
+references:
+  - https://attack.mitre.org/techniques/T1189/
+  - https://attack.mitre.org/techniques/T1204/001/
+  - https://attack.mitre.org/techniques/T1071/004/
+  - https://attack.mitre.org/tactics/TA0011/
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.command_and_control
+  - attack.t1189
+  - attack.t1204.001
+  - attack.t1071.004
+  - network.dns_tunneling
+  - network.c2_communication
+  - network.phishing
+logsource:
+  category: dns
+  definition: >
+    DNS query log sources recording outbound DNS requests, including queried
+    domain, source IP, query type, and response. Compatible with Microsoft DNS
+    Server, BIND, Infoblox, Cisco Umbrella, Cloudflare Gateway, Pi-hole,
+    Zeek dns.log, and similar DNS logging solutions.
+detection:
+  selection_dns_malicious_domain:
+    query|contains:
+      - 'malware-c2.example'
+      - 'phish-kit.example'
+      - 'exploit-host.example'
+      # Replace above with your threat intel feed IOCs
+  selection_dns_suspicious_tld:
+    query|endswith:
+      - '.top'
+      - '.xyz'
+      - '.buzz'
+      - '.club'
+      - '.work'
+  selection_dns_high_entropy:
+    query|re:
+      - '^[a-z0-9]{16,}\.(com|net|org|info)$'
+      - '^[a-z0-9]{20,30}\.(top|xyz|buzz|club|work)$'
+  filter_dns_known_good:
+    query|endswith:
+      - '.google.com'
+      - '.microsoft.com'
+      - '.amazonaws.com'
+      - '.cloudflare.com'
+      - '.windowsupdate.com'
+      - '.office.com'
+      - '.live.com'
+      - '.akamaiedge.net'
+  condition: (1 of selection_*) and not 1 of filter_*
+falsepositives:
+  - Legitimate services using dynamically generated subdomains (CDN, cloud hosting).
+  - Newly registered benign domains matching high-entropy patterns.
+  - Expired or sinkholed domains still receiving residual NXDOMAIN queries.
+  - Security research and malware analysis lab environments.
+  - DNS-based load balancing or geo-DNS services producing varied query patterns.
+  - Internal applications communicating with third-party APIs on uncommon TLDs.
+level: high
+actionable:
+  - Check resolved IP(s) for the queried domain and correlate with netflow data.
+  - Investigate the source endpoint for the parent process initiating the query.
+  - Enrich domain with threat intel lookups (VirusTotal, Shodan, OTX).
+  - Block the malicious domain at the DNS resolver or firewall.
+  - Review the endpoint for additional IOCs beyond the DNS alert.
+  - If using Zeek, cross-reference with conn.log for full connection context.

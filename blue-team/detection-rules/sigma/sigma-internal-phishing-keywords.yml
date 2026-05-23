@@ -1,0 +1,60 @@
+title: Internal Phishing - Keyword-Based Detection with Sender Verification
+id: 8f3c1a2e-7d2b-4a9c-b5f1-6e0d9a3c8b2f
+status: stable
+description: Detects internal-to-internal emails containing phishing keywords (urgent action, credential requests, wire transfer) while applying LDAP-based sender verification and domain-aware exceptions to reduce false positives.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1566/001/
+  - https://letsdefend.io
+tags:
+  - attack.t1566.001
+  - attack.initial_access
+logsource:
+  product: email
+  service: gateway
+detection:
+  selection_keywords:
+    Subject|contains:
+      - 'urgent'
+      - 'action required'
+      - 'verify your account'
+      - 'password reset'
+      - 'wire transfer'
+      - 'invoice'
+      - 'payment'
+      - 'suspicious activity'
+    Body|contains:
+      - 'click here'
+      - 'verify now'
+      - 'confirm your identity'
+      - 'update your details'
+      - 'unauthorized access'
+  selection_internal:
+    Sender|endswith:
+      - '@letsdefend.io'
+    Recipient|endswith:
+      - '@letsdefend.io'
+  filter_known_good:
+    Sender|contains:
+      - 'noreply@'
+      - 'no-reply@'
+      - 'system@'
+      - 'admin@'
+  filter_authenticated:
+    SPF: 'pass'
+    DKIM: 'pass'
+    DMARC: 'pass'
+  condition: selection_keywords and selection_internal and not filter_known_good and not filter_authenticated
+falsepositives:
+  - Legitimate internal communications from HR, IT, or management containing similar keywords
+  - Automated system notifications
+  - Internal phishing awareness training emails
+level: medium
+response:
+  - Verify sender identity via LDAP/AD lookup
+  - Check for anomalous routing in Exchange transport logs
+  - Extract and analyze any attachments or URLs
+  - Cross-reference sender with recent HR onboarding/offboarding lists
+  - If confirmed benign, add sender to exception list and tune rule

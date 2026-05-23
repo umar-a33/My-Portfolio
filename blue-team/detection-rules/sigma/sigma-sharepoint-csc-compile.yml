@@ -1,0 +1,30 @@
+title: csc.exe Compiled by w3wp.exe (Post-Exploitation Indicator)
+id: 2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e
+status: stable
+description: Detects when the .NET compiler (csc.exe) is spawned by the SharePoint worker process (w3wp.exe), indicating post-exploitation payload compilation.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+tags:
+  - attack.t1059.001
+  - attack.execution
+logsource:
+  product: edr
+  category: process_creation
+detection:
+  selection:
+    ParentImage|endswith: '\w3wp.exe'
+    Image|endswith: '\csc.exe'
+  condition: selection
+falsepositives:
+  - Extremely rare in production SharePoint environments
+  - Custom SharePoint solutions with dynamic compilation
+level: critical
+response:
+  - Immediately isolate the server
+  - Capture full process tree and memory dump
+  - Analyze the compiled payload
+  - Check for machine key extraction activity
+  - Escalate to incident response team immediately

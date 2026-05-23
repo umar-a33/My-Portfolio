@@ -1,0 +1,51 @@
+title: Directory Traversal on Network Gateway (CVE-2024-24919)
+id: 4c5d6e7f-8a9b-0c1d-2e3f-4a5b6c7d8e9f
+status: stable
+description: Detects directory traversal attempts (../) on network gateways and firewalls, specifically targeting CVE-2024-24919 (Checkpoint Gateway LFI) and similar vulnerabilities.
+author: Umar Ahmed
+date: 2026-05-23
+modified: 2026-05-23
+references:
+  - https://attack.mitre.org/techniques/T1190/
+  - https://attack.mitre.org/techniques/T1083/
+  - https://nvd.nist.gov/vuln/detail/CVE-2024-24919
+tags:
+  - attack.t1190
+  - attack.t1083
+  - attack.initial_access
+  - attack.discovery
+logsource:
+  product: firewall
+  category: webserver
+detection:
+  selection_traversal:
+    cs-uri-query|contains:
+      - '../'
+      - '..%2f'
+      - '..%2F'
+      - '%2e%2e%2f'
+      - '%2e%2e/'
+  selection_sensitive:
+    cs-uri-query|contains:
+      - 'etc/passwd'
+      - 'etc/shadow'
+      - 'etc/hosts'
+      - 'windows/win.ini'
+      - 'boot.ini'
+  selection_success:
+    sc-status:
+      - 200
+      - 201
+  condition: selection_traversal and selection_sensitive
+falsepositives:
+  - Legitimate URL-encoded parameters that happen to contain ../ patterns
+  - Web application scanning tools (vulnerability scanners)
+level: critical
+response:
+  - Immediately isolate the affected gateway
+  - Block source IP across all perimeter defenses
+  - Check for successful file read (HTTP 200 response)
+  - Apply vendor patch immediately
+  - Reset all gateway credentials
+  - Hunt for lateral movement from the gateway
+  - Escalate for forensic imaging

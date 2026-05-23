@@ -1,76 +1,84 @@
-# My Cybersecurity Portfolio — Offensive & Defensive
+# Umar Ahmed — Cybersecurity Portfolio
 
-**Umar Ahmed** — Cybersecurity Student · AWS Cloud Pentester · SOC Analyst in training · OSCP candidate.
+**SOC Analyst · Cloud Pentester · Red Team Operator**
 
 > *Evidence over conversation. Terminal output or it didn't happen.*
 
 ---
 
-## What's in here
+## 🔭 Overview
 
-This repo is my lab evidence — real investigations, real terminal logs, real screenshots. I do both **red team** (offensive) and **blue team** (defensive) work, because the 16‑week roadmap doesn't pick sides.
+This repo is my working portfolio — real investigations, real terminal logs, real detection rules. I build in both directions: **red team** (offensive) and **blue team** (defensive). The best attackers understand defense, and the best defenders think like attackers.
 
-### 🔴 Offensive — Pentesting & Exploitation
-
-- **Web Attacks** — SQLi, XSS, CSRF, SSRF, IDOR, Command Injection... the full OWASP Top 10, exploited blind
-- **AWS Cloud Pentesting** — IAM privilege escalation, Lambda exploitation, IMDS attacks, S3 bucket hunting, cross‑service chains (Beanstalk, SNS)
-- **Active Directory** — Kerberoasting, AS‑REP roasting, Golden Ticket, BloodHound mapping
-- **AI / LLM Attacks** — Prompt injection, RAG exploitation, agentic workflow hijacking, Garak testing
-
-### 🔵 Defensive — SOC & Incident Response
-
-- **Phishing Triage** — Header analysis, payload extraction, domain reputation checks, containment playbooks
-- **Malware Analysis** — Static & dynamic analysis, IOC extraction, sandboxing
-- **Web Attack Detection** — Log analysis, WAF bypass detection, attack chain reconstruction
+**Currently:** Phase 2 — AWS Cloud Pentesting (IAM enumeration)
 
 ---
 
-## The Pentesting Workflow (Hermes + Agent0)
+## 📁 Structure
 
-I run an agentic workflow that splits thinking from execution:
-
-| Role | Tool | What it does |
-|------|------|-------------|
-| **Brain** 🧠 | Hermes | Strategy, planning, research, vault management, cron jobs |
-| **Hands** 🔧 | Agent0 | CLI execution, lab work, browser automation, evidence capture |
-| **Memory** 📝 | Obsidian | PARA‑lite vault, synced phone↔desktop, managed by Hermes |
-| **Backup** 🗄️ | GitHub | Hermes config, lab repos, portfolio evidence |
-
-**The loop:**
 ```
-Hermes plans → Umar reviews → Agent0 executes → Evidence captured → Hermes vaults it
+/red-team/              ← Offensive operations
+  web-attacks/          — OWASP Top 10, blind exploitation
+  aws-pentesting/       — IAM escalation, Lambda, S3, IMDS
+  active-directory/     — Kerberoasting, BloodHound, Impacket
+  ai-llm-attacks/       — Prompt injection, RAG exploitation
+
+/blue-team/             ← Defensive operations
+  soc-investigations/   — Phishing, malware, incident response
+    phishing/           — Email triage, URL analysis, containment
+    malware/            — Static/dynamic analysis, IOC extraction
+  detection-rules/      — Sigma rules, Splunk queries
+    sigma/              — Production-ready Sigma detection rules
+    splunk/             — SPL hunt queries
+
+/labs/                  — Lab write-ups and infrastructure
+  s3-enumeration/       — AWS Account ID via public S3
+  infrastructure/       — Lab architecture manifest
 ```
 
-This isn't just a study workflow — it's a **homelab‑adjacent portfolio builder**. Every lab session produces:
-- Terminal output (real, raw, timestamped)
-- Screenshots (exploit success, tool output, configurations)
-- A note in Obsidian (PARA‑lite, searchable, reviewable)
-- An artifact in this repo (for CV and interview evidence)
+## 🔴 SOC Investigations
+
+| ID | Type | Verdict | CVE |
+|----|------|---------|-----|
+| [SOC120](blue-team/soc-investigations/phishing/SOC120-internal-phishing-false-positive.md) | Phishing (Internal) | 🟢 False Positive | — |
+| [SOC140](blue-team/soc-investigations/phishing/SOC140-malicious-phishing-attachment.md) | Phishing (Attachment) | 🔴 True Positive | — |
+| [SOC141](blue-team/soc-investigations/phishing/SOC141-phishing-url-compromised-endpoint.md) | Phishing (URL) | 🔴 True Positive | — |
+| [SOC104](blue-team/soc-investigations/malware/SOC104-suspicious-winrar-false-positive.md) | Malware (Download) | 🟢 False Positive | — |
+| [SOC137](blue-team/soc-investigations/malware/SOC137-malicious-docm-macro.md) | Malware (Macro) | 🔴 True Positive | — |
+| [SOC138](blue-team/soc-investigations/malware/SOC138-suspicious-xls-c2-communication.md) | Malware (C2) | 🔴 True Positive | — |
+| [SOC342](blue-team/soc-investigations/SOC342-sharepoint-rce.md) | Web Attack (RCE) | 🔴 True Positive | CVE-2025-53770 |
+| [SOC287](blue-team/soc-investigations/SOC287-checkpoint-lfi.md) | Network (LFI) | 🔴 True Positive | CVE-2024-24919 |
+
+## 🛡️ Detection Rules
+
+| Rule | Technique | MITRE ATT&CK |
+|------|-----------|--------------|
+| [Internal Phishing](blue-team/detection-rules/sigma/sigma-internal-phishing-keywords.yml) | Email keyword + sender verification | T1566.001 |
+| [Malicious Attachments](blue-team/detection-rules/sigma/sigma-malicious-email-attachments.yml) | Macro-enabled Office docs | T1566.001, T1204.002 |
+| [Malicious URL Access](blue-team/detection-rules/sigma/sigma-malicious-url-access.yml) | Proxy/DNS detection | T1189, T1204.001 |
+| [Suspicious Downloads](blue-team/detection-rules/sigma/sigma-software-download-allowlist.yml) | Allowlist-filtered download detection | T1189 |
+| [Macro → PowerShell](blue-team/detection-rules/sigma/sigma-macro-autoopen-powershell.yml) | AutoOpen spawning PowerShell | T1204.002, T1059.001 |
+| [C2 Beaconing](blue-team/detection-rules/sigma/sigma-outbound-c2-beaconing.yml) | Periodic outbound C2 traffic | T1071.001 |
+| [SharePoint RCE](blue-team/detection-rules/sigma/sigma-sharepoint-toolpane-rce.yml) | ToolPane.aspx exploitation | T1190 |
+| [csc.exe Compile](blue-team/detection-rules/sigma/sigma-sharepoint-csc-compile.yml) | w3wp.exe → csc.exe | T1059.001 |
+| [Directory Traversal](blue-team/detection-rules/sigma/sigma-directory-traversal-gateway.yml) | ../ on network gateways | T1190, T1083 |
+
+Each Sigma rule is production-ready and mapped to its corresponding SOC investigation.
 
 ---
 
-## Current Focus (16‑Week Roadmap)
+## 🧠 Workflow
 
-| Phase | Timeline | Focus |
-|-------|----------|-------|
-| 1 | Weeks 1–4 | Web Fundamentals (PortSwigger Academy, OWASP Top 10) |
-| 2 | Weeks 5–10 | AWS Pentesting — CORE (Simply Cyber, 67 lessons, 2 capstones) |
-| 3 | Weeks 11–16 | Network + Active Directory (BloodHound, Impacket, Kerberos) |
-| 4 | Weeks 17–22 | AI Logic + Agent Exploitation (Arcanum, Garak, RAG) |
-| 5 | Ongoing | CTFs + Bug Bounty (HTB, THM, HackerOne) |
-| 6 | Certifications | eJPT → AWS Security Specialty → OSCP |
+I run a dual-agent setup: **Hermes** (this VPS) for strategy and documentation, **Agent0** (local) for execution. Obsidian vault for knowledge management. GitHub for evidence storage and portfolio.
 
-*Currently on: AWS CORE — IAM enumeration phase.*
+Every lab session produces terminal output, an Obsidian note, and an artifact in this repo.
 
 ---
 
-## Why this repo exists
+## 📜 License
 
-Because a CV that says "I know cloud pentesting" means nothing.
-A CV linked to a repo with terminal output, exploit logs, and documented methodologies means everything.
-
-This is my proof of work.
+MIT — see [LICENSE](LICENSE)
 
 ---
 
-*focused. minimal. execution‑first.*
+*focused. minimal. execution-first.*
